@@ -14,5 +14,5 @@ password: oracle
 9. fill form (I use test for all pages)
 10. Open terninal and execute `docker exec -it oracle_db sqlplus <username>/<password>@<dbname>` in my case it is `docker exec -it oracle_db sqlplus test/test@test`
 11. Enter user-name and password
-12. ...
-###13. PROFIT! 
+12. ...  
+13. PROFIT! 
