@@ -1,6 +1,6 @@
 ## Oracle DB for local use in docker
 
-1. Intall <a href="https://docs.docker.com/engine/installation/">docker</a> and <a href="https://docs.docker.com/compose/install/">docker-compose</a>;
+1. Intsall <a href="https://docs.docker.com/engine/installation/">docker</a> and <a href="https://docs.docker.com/compose/install/">docker-compose</a>;
 2. Run `docker-compose up` or `docker-compose up -d` ;
 3. Wait few minutes to download image and for db start (it takes 3-4 minutes);
 4. Go to <a href="http://localhost:8080/apex">http://localhost:8080/apex</a>
