@@ -1,0 +1,8 @@
+version: '2'
+services:
+  oracle_db:
+    container_name: oracle_db
+    image: sath89/oracle-xe-11g:latest
+    ports: 
+      - 8080:8080
+      - 1521:1521
