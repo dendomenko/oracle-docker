@@ -12,7 +12,7 @@ password: oracle
 7. Log in with new password;
 8. Go to "Manage Workspaces" -> Create Workspace
 9. fill form (I use test for all pages)
-10. Open terninal and execute `docker exec -it oracle_db sqlplus <username>/<password>` in my case it is `docker exec -it oracle_db sqlplus test/test`
+10. Open terninal and execute `docker exec -it oracle_db sqlplus <schemaname>/<schemapassword>` in my case it is `docker exec -it oracle_db sqlplus test/test`
 11. Enter user-name and password
 12. ...  
 13. PROFIT! 
@@ -25,14 +25,14 @@ password: oracle
    - execute in terminal `docker exec -it oracle_db sqlplus /nolog`  
    - then execute `conn sys/oracle as sysdba`
    - execute next 4 commands for your users:  
-   \- `grant dba to <username>;` - to grant admin privileges
-   \- `grant CREATE DATABASE LINK to <username;` - to grant privileges for link creation  
-   \- `grant CREATE PUBLIC DATABASE LINK to <username;` - to grant privileges for public link creation  
-   \- `grant CREATE SESSION to <username;` - to grant privileges for session creation
+   \- `grant dba to <schemaname>;` - to grant admin privileges  
+   \- `grant CREATE DATABASE LINK to <schemaname>;` - to grant privileges for link creation  
+   \- `grant CREATE PUBLIC DATABASE LINK to <schemaname;` - to grant privileges for public link creation  
+   \- `grant CREATE SESSION to <schemaname;` - to grant privileges for session creation
 3. Then open sqlplus and log in
 4. Create link using next command:
   - `create database link <linkname>`     
-       `connect to <username>`    
+       `connect to <schemaname>`    
        `identified by <password>`    
        `using 'localhost:1521/xe';`
    
