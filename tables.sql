@@ -98,6 +98,10 @@ ALTER TABLE orders
 ALTER TABLE orders 
     ADD CONSTRAINT fk_order_drug FOREIGN KEY (drug_id) REFERENCES drug(id) ON DELETE SET NULL;
 
+----------------------------------------------------------
+CREATE SNAPSHOT drug_group PCTFREE 5 PCTUSED 60
+STORAGE (INITIAL 50K NEXT 50K PCTINCREASE 50) REFRESH FAST
+START WITH SYSDATE NEXT SYSDATE + 7 AS SELECT * FROM drug_group @wilnink;
 
 
 -----------------------------------------------------------
