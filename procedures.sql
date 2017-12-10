@@ -117,3 +117,19 @@ BEGIN
    CLOSE find;
 END find_drug;
 /
+
+CREATE OR REPLACE PROCEDURE find_client(aname varchar2, asurname varchar2) AS
+fname varchar2(50);
+fsurname varchar2(50);
+fdiscount number(10);
+CURSOR find IS SELECT name, surname, discount FROM client WHERE name LIKE '%'||aname||'%' AND surname LIKE '%'||asurname||'%';
+BEGIN
+  OPEN find;
+   LOOP
+      FETCH find INTO fname, fsurname, fdiscount;
+      EXIT WHEN find%NOTFOUND;
+      dbms_output.put_line('name: ' || fname || ', surname: ' || fsurname || ', discount:' || fdiscount);
+   END LOOP;
+   CLOSE find;
+END find_client;
+/
