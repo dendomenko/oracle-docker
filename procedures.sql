@@ -74,6 +74,13 @@ BEGIN
 END delete_client;
 /
 
+CREATE OR REPLACE PROCEDURE delete_drugstore (id number) AS
+BEGIN
+  DELETE FROM drugstore WHERE id =id;
+  commit;
+END delete_drugstore;
+/
+
 -- CALCULATION PROCEDURES
 
 CREATE OR REPLACE PROCEDURE calculate_discount (name varchar2, surname varchar2) AS
