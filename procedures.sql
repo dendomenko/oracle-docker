@@ -33,7 +33,7 @@ BEGIN
 END add_client;
 /
 
-CREATE OR REPLACE PROCEDURE add_order (name varchar2, surname varchar2, drug varchar2) AS
+CREATE OR REPLACE PROCEDURE add_order (name varchar2, surname varchar2, drug varchar2, drugstore_id number) AS
 u_id number(10);
 d_id number(10);
 price number(10);
@@ -50,7 +50,7 @@ BEGIN
    open get_price;
   fetch get_price into price;
   close get_price;
-	INSERT INTO orders (client_id, drug_id, created_at) VALUES (u_id, d_id, sysdate);
+	INSERT INTO orders (client_id, drug_id, created_at, drugstore_id) VALUES (u_id, d_id, sysdate, drugstore_id);
 	UPDATE drug d1 SET d1.quantity = (d1.quantity - 1) WHERE d1.id = d_id;
 	UPDATE client c1 SET c1.total_sum = (c1.total_sum + price) WHERE c1.id = u_id;
 	commit;

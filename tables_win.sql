@@ -1,52 +1,23 @@
---LINKS
+--- LINKS
 
-CREATE DATABASE LINK winlink
+CREATE DATABASE LINK ulink
 CONNECT TO gr156
 IDENTIFIED BY gr156
 USING 'k105win';
 
-CREATE DATABASE LINK winlink
-CONNECT TO drugstore_win
+CREATE DATABASE LINK ulink
+CONNECT TO drugstore
 IDENTIFIED BY "123456"
 USING 'localhost:1521/xe';
 
+----------------------------------------------------------
+CREATE SNAPSHOT drug_group PCTFREE 5 PCTUSED 60
+STORAGE (INITIAL 50K NEXT 50K PCTINCREASE 50) REFRESH FAST
+START WITH SYSDATE NEXT SYSDATE + 7 AS SELECT * FROM drug_group@ulink;
 
--- create tables and sequense with triggers for autoincremental logic
----------------------------------------------
-CREATE TABLE drugstore (
-	id number(10) PRIMARY KEY,
-    name varchar2(50) NOT NULL,
-    city varchar2(50) NOT NULL,
-    address varchar2(50) NOT NULL
-);
-create sequence drugstore_id_seq;
-create trigger drugstore_ai
-	before insert on drugstore
-	for each row
-begin
-	select drugstore_id_seq.nextval
-	into :new.id
-	from dual;
-end;
-/
-
-
--- group for drug
---------------------------------------------
-CREATE TABLE  drug_group (
-	id number(10) PRIMARY KEY,
-    name varchar2(50) NOT NULL
-);
-create sequence drug_group_id_seq;
-create trigger drug_group_ai
-	before insert on drug_group
-	for each row
-begin
-	select drug_group_id_seq.nextval
-	into :new.id
-	from dual;
-end;
-/
+CREATE SNAPSHOT drugstore PCTFREE 5 PCTUSED 60
+STORAGE (INITIAL 50K NEXT 50K PCTINCREASE 50) REFRESH FAST
+START WITH SYSDATE NEXT SYSDATE + 7 AS SELECT * FROM drugstore@ulink;
 
 -------------------------------------------
 CREATE TABLE drug (
@@ -67,15 +38,13 @@ begin
 	from dual;
 end;
 /
-ALTER TABLE drug
-ADD CONSTRAINT fk_drug_group FOREIGN KEY (group_id) REFERENCES drug_group(id) ON DELETE SET NULL;
 
 CREATE OR REPLACE TRIGGER drug_ins
 AFTER INSERT ON drug 
 FOR EACH ROW
 WHEN (new.flag is null)
 BEGIN
-    INSERT INTO drug@winlink VALUES(:new.id, :new.name, :new.price, :new.quantity, :new.group_id, 'T');
+    INSERT INTO drug@ulink VALUES(:new.id, :new.name, :new.price, :new.quantity, :new.group_id, 'T');
 END;
 /
 
@@ -86,7 +55,7 @@ FOR EACH ROW
     Mutating EXCEPTION;
     PRAGMA exception_init (mutating, -4091);
     BEGIN
-        DELETE drug@winlink
+        DELETE drug@ulink
            WHERE id=:old.id;
         EXCEPTION WHEN mutating THEN NULL;
 END;
@@ -97,7 +66,7 @@ CREATE OR REPLACE TRIGGER drug_upd
 FOR EACH ROW
       BEGIN		
         IF NOT updating('flag') THEN
-          UPDATE drug@winlink SET
+          UPDATE drug@ulink SET
              id=:new.id,
              name=:new.name,
              price=:new.price,
@@ -133,7 +102,7 @@ AFTER INSERT ON client
 FOR EACH ROW
 WHEN (new.flag is null)
      BEGIN
-        INSERT INTO client@winlink  VALUES(:new.id, :new.name, :new.surname, :new.total_sum, :new.discount, 'T');
+        INSERT INTO client@ulink  VALUES(:new.id, :new.name, :new.surname, :new.total_sum, :new.discount, 'T');
 END;
 /
 
@@ -144,7 +113,7 @@ FOR EACH ROW
   	Mutating EXCEPTION;
 	PRAGMA exception_init (mutating, -4091);
 	  BEGIN		
-	 	DELETE client@winlink
+	 	DELETE client@ulink
 			WHERE id=:old.id;
 		EXCEPTION WHEN mutating THEN NULL;
 END;
@@ -155,7 +124,7 @@ CREATE OR REPLACE TRIGGER client_upd
 FOR EACH ROW
 	  BEGIN		
 		IF NOT updating('flag') THEN
-		   UPDATE client@winlink  SET
+		   UPDATE client@ulink  SET
 		   	 id=:new.id,
 			 name=:new.name,
 			 surname=:new.surname,
@@ -188,18 +157,12 @@ end;
 ALTER TABLE orders 
     ADD CONSTRAINT fk_order_user FOREIGN KEY (client_id) REFERENCES client(id) ON DELETE CASCADE;
 
-ALTER TABLE orders 
-    ADD CONSTRAINT fk_order_drug FOREIGN KEY (drug_id) REFERENCES drug(id) ON DELETE CASCADE;
-
-ALTER TABLE orders 
-    ADD CONSTRAINT fk_order_drugstore FOREIGN KEY (drugstore_id) REFERENCES drugstore(id) ON DELETE CASCADE;
-
 CREATE OR REPLACE TRIGGER orders_ins
 	AFTER INSERT ON orders
 FOR EACH ROW
 WHEN (new.flag is null)
 	  BEGIN		
-	 	INSERT INTO orders@winlink  VALUES(:new.id, :new.client_id, :new.drug_id, :new.drugstore_id, :new.created_at, 'T');
+	 	INSERT INTO orders@ulink  VALUES(:new.id, :new.client_id, :new.drug_id, :new.drugstore_id, :new.created_at, 'T');
 END;
 /
 
@@ -210,7 +173,7 @@ FOR EACH ROW
   	Mutating EXCEPTION;
 	PRAGMA exception_init (mutating, -4091);
 	  BEGIN		
-	 	DELETE orders@winlink
+	 	DELETE orders@ulink
 			WHERE id=:old.id;
 		EXCEPTION WHEN mutating THEN NULL;
 END;
@@ -221,7 +184,7 @@ CREATE OR REPLACE TRIGGER orders_upd
 FOR EACH ROW
 	  BEGIN		
 		IF NOT updating('flag') THEN
-		   UPDATE orders@winlink  SET
+		   UPDATE orders@ulink  SET
 		   	 id=:new.id,
 			 client_id=:new.client_id,
 			 drug_id=:new.drug_id,
@@ -232,14 +195,15 @@ FOR EACH ROW
 		END IF;
 END;
 /
------------------------------------------------------------
--- delete tables
+------------------------------------------------------------------------------------------------------
+
+
 DROP TABLE orders;
 DROP TABLE client;
 DROP TABLE drug;
-DROP TABLE drug_group;
-DROP TABLE drugstore;
----------------------------
+DROP SNAPSHOT drug_group;
+DROP SNAPSHOT drugstore;
+-----------------------------------------
 DROP trigger orders_ai;
 DROP trigger client_ai;
 DROP trigger drug_ai;
@@ -255,11 +219,11 @@ DROP trigger drug_del;
 DROP trigger orders_upd;
 DROP trigger client_upd;
 DROP trigger drug_upd;
-------------------------------------
+---------------------------------
 DROP sequence orders_id_seq;
 DROP sequence client_id_seq;
 DROP sequence drug_id_seq;
 DROP sequence drug_group_id_seq;
 DROP sequence drugstore_id_seq;
 
-DROP DATABASE LINK winlink;
+DROP DATABASE LINK ulink;
