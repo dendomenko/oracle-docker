@@ -33,13 +33,13 @@ BEGIN
 END add_client;
 /
 
-CREATE OR REPLACE PROCEDURE add_order (name varchar2, surname varchar2, drug varchar2, drugstore_id number) AS
+CREATE OR REPLACE PROCEDURE add_order (iname varchar2, isurname varchar2, idrug varchar2, drugstore_id number) AS
 u_id number(10);
 d_id number(10);
 price number(10);
-CURSOR get_uid IS SELECT id FROM client WHERE name = name AND surname = surname;
-CURSOR get_drug_id IS SELECT id FROM drug WHERE name = drug;
-CURSOR get_price IS SELECT price FROM drug WHERE name = drug;
+CURSOR get_uid IS SELECT id FROM client WHERE name = iname AND surname = isurname;
+CURSOR get_drug_id IS SELECT id FROM drug WHERE name = idrug;
+CURSOR get_price IS SELECT price FROM drug WHERE name = idrug;
 BEGIN
  open get_uid;
   fetch get_uid into u_id;
@@ -57,9 +57,9 @@ BEGIN
 END add_order;
 /
 
-CREATE OR REPLACE PROCEDURE add_order_by_user_id (uid number, did number) AS
+CREATE OR REPLACE PROCEDURE add_order_by_user_id (uid number, did number, dsid number) AS
 BEGIN
-	INSERT INTO orders (client_id, drug_id, created_at) VALUES (uid, did, sysdate);
+	INSERT INTO orders (client_id, drug_id, created_at, drugstore_id) VALUES (uid, did, sysdate, dsid);
   commit;
 END add_order_by_user_id;
 /
@@ -107,6 +107,31 @@ END calculate_discount;
 /
 
 
+CREATE OR REPLACE PROCEDURE calculate AS
+total number(10);
+u_id number(10);
+CURSOR get_total IS SELECT id, total_sum FROM client;
+BEGIN
+  open get_total;
+    LOOP
+    fetch get_total into u_id, total;
+      EXIT WHEN get_total%NOTFOUND;
+        IF total = 0 THEN
+          UPDATE client c1 SET c1.discount = 0 WHERE c1.id = u_id;       
+        ELSIF total > 0 AND total < 100 THEN
+          UPDATE client c1 SET c1.discount = 7 WHERE c1.id = u_id;         
+        ELSIF total >= 100 AND total < 500 THEN 
+          UPDATE client c1 SET c1.discount = 10 WHERE c1.id = u_id;      
+        ELSE 
+          UPDATE client c1 SET c1.discount = 15 WHERE c1.id = u_id;   
+        END IF;
+      END LOOP;
+      close get_total;
+    commit;
+END calculate;
+/
+
+
 -- SELECT PROCEDURES
 
 CREATE OR REPLACE PROCEDURE find_drug (aname varchar2) AS
@@ -140,3 +165,67 @@ BEGIN
    CLOSE find;
 END find_client;
 /
+
+CREATE OR REPLACE PROCEDURE show_drug AS
+fname varchar2(50);
+fquantity number(10);
+fprice number(10);
+fgname varchar2(50);
+CURSOR find IS SELECT d.name, d.quantity, d.price, dg.name FROM drug d INNER JOIN drug_group dg on d.group_id=dg.id;
+BEGIN
+  OPEN find;
+   LOOP
+      FETCH find INTO fname, fquantity, fprice, fgname;
+      EXIT WHEN find%NOTFOUND;
+      dbms_output.put_line('name: ' || fname || ', qty: ' || fquantity || ', group:' || fgname || ', price:' || fprice);
+   END LOOP;
+   CLOSE find;
+END show_drug;
+/
+
+CREATE OR REPLACE PROCEDURE show_order AS
+ffirst_name varchar2(50);
+flast_name varchar2(50);
+fprice number(10);
+fname varchar2(50);
+fdrugstore varchar2(50);
+faddress varchar2(50);
+CURSOR find IS SELECT c.name, c.surname, d.name, d.price, ds.name, ds.address FROM orders o INNER JOIN client c ON o.client_id = c.id 
+    INNER JOIN drug d ON o.drug_id = d.id INNER JOIN drugstore ds ON o.drugstore_id = ds.id;
+BEGIN
+  OPEN find;
+   LOOP
+      FETCH find INTO ffirst_name, flast_name, fname, fprice, fdrugstore, faddress;
+      EXIT WHEN find%NOTFOUND;
+      DBMS_OUTPUT.PUT_LINE('name: ' || ffirst_name || ' surname: ' || flast_name || ' drug: ' || fname || ' price: ' || fprice || ' drugstore: ' || fdrugstore || ' address: ' || faddress);
+   END LOOP;
+   CLOSE find;
+END show_order;
+/
+
+exec add_store('Apteka N1', 'Kharkiv', 'Sumskaya 6');
+exec add_store('Apteka N2', 'Kharkiv', 'Chkalova 19');
+exec add_store('Apteka N3', 'Kharkiv', 'Bluhera 50');
+
+exec add_drug_group('antibiotic');
+exec add_drug_group('steroid');
+exec add_drug_group('tabletka');
+
+exec add_drug('citramon', 20, 25, 'tabletka');
+exec add_drug('analgin', 10, 20, 'tabletka');
+exec add_drug('ketanov', 34, 25, 'tabletka');
+exec add_drug('nosfirin', 120, 25, 'antibiotic');
+exec add_drug('fenozepam', 200, 25, 'antibiotic');
+exec add_drug('metanol', 150, 25, 'steroid');
+exec add_drug('testosteron', 340, 25, 'steroid');
+
+exec add_client('Denis', 'Domenko');
+exec add_client('Ivan', 'Petrov');
+
+exec add_order('Denis', 'Domenko', 'citramon', 1);
+exec add_order('Denis', 'Domenko', 'citramon', 1);
+exec add_order('Denis', 'Domenko', 'fenozepam', 1);
+exec add_order('Denis', 'Domenko', 'testosteron', 1);
+
+exec add_order('Ivan', 'Petrov', 'fenozepam', 3);
+exec add_order('Ivan', 'Petrov', 'testosteron', 2);
